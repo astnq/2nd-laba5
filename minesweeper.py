@@ -2,234 +2,235 @@ import tkinter as tk
 from tkinter import messagebox
 import random
 
-
+# Класс для игры "Сапер"
 class Minesweeper:
     def __init__(self, master, width=10, height=10, mines=10):
-        self.master = master
-        self.width = width
-        self.height = height
-        self.mines = mines
+        self.master = master  # Главное окно
+        self.width = width  # Ширина поля
+        self.height = height  # Высота поля
+        self.mines = mines  # Количество мин
 
-        # Игровое состояние: переменные для кнопок, раскрытых ячеек, флагов и позиций мин
-        self.buttons = {}  # Словарь для кнопок
-        self.revealed = set()  # Множество для раскрытых ячеек
-        self.flags = set()  # Множество для флагов
-        self.mine_positions = set()  # Множество для позиций мин
-        self.first_click = True  # Флаг, показывающий, что это первый клик
+        # Игровое состояние
+        self.buttons = {}  # Кнопки, соответствующие ячейкам поля
+        self.revealed = set()  # Множество раскрытых ячеек
+        self.flags = set()  # Множество установленных флагов
+        self.mine_positions = set()  # Множество позиций мин
+        self.first_click = True  # Флаг первого клика
         self.correct_flags = 0  # Количество правильно установленных флагов
-        self.mines_stepped_on = 0  # Количество мин, на которые наступил игрок
-        self.flag_mode = False  # Режим установки флагов (по умолчанию выключен)
+        self.mines_stepped_on = 0  # Количество наступлений на мину
+        self.flags_placed = 0  # Количество установленных флагов
 
-        self.create_widgets()  # Создание всех виджетов и интерфейса
+        self.create_widgets()  # Создание виджетов на экране
 
+    # Метод для создания виджетов (кнопок) на экране
     def create_widgets(self):
-        # Создание игрового поля
-        self.grid_frame = tk.Frame(self.master)
+        self.grid_frame = tk.Frame(self.master)  # Создание контейнера для игрового поля
         self.grid_frame.pack(padx=20, pady=20)
 
-        # Панель управления: кнопки для флагов и перезапуска
-        control_frame = tk.Frame(self.master)
+        control_frame = tk.Frame(self.master)  # Панель управления (кнопка перезапуска)
         control_frame.pack(pady=10)
-
-        # Кнопка для переключения режима флага
-        self.flag_button = tk.Button(
-            control_frame,
-            text="Режим Флага: ВЫКЛ",
-            command=self.toggle_flag_mode,
-            bg="#FF5733",
-            fg="white",
-            font=("Arial", 12),
-            width=15
-        )
-        self.flag_button.pack(side=tk.LEFT, padx=5)
 
         # Кнопка для перезапуска игры
         self.restart_button = tk.Button(
             control_frame,
-            text="Перезапустить",
-            command=self.restart_game,
-            bg="#4CAF50",
-            fg="white",
-            font=("Arial", 12),
-            width=15
+            text="Перезапустить",  
+            command=self.restart_game,  
+            bg="#4CAF50",  
+            fg="white", 
+            font=("Arial", 12), 
+            width=15  
         )
         self.restart_button.pack(side=tk.LEFT, padx=5)
 
-        # Создание сетки кнопок (игровое поле)
+        # Создание кнопок для игрового поля
         for y in range(self.height):
             for x in range(self.width):
                 button = tk.Button(
                     self.grid_frame,
-                    width=4,
-                    height=2,
-                    font=("Arial", 12),
-                    command=lambda x=x, y=y: self.reveal(x, y),
-                    bg="#f0f0f0"
+                    width=4,  
+                    height=2,  
+                    font=("Arial", 12),   
+                    command=lambda x=x, y=y: self.reveal(x, y),  
+                    bg="#f0f0f0"   
                 )
-                # Правая кнопка мыши для установки флага
+                # Правый клик для установки/снятия флага
                 button.bind('<Button-3>', lambda event, x=x, y=y: self.toggle_flag(x, y))
-                button.grid(row=y, column=x, padx=2, pady=2)
-                self.buttons[(x, y)] = button  # Сохраняем кнопку в словарь
+                button.grid(row=y, column=x, padx=2, pady=2)  # Размещение кнопок на поле
+                self.buttons[(x, y)] = button  # Сохранение кнопки в словарь
 
-    def toggle_flag_mode(self):
-        # Переключение режима флага
-        self.flag_mode = not self.flag_mode
-        if self.flag_mode:
-            self.flag_button.config(text="Режим Флага: ВКЛ", bg="#4CAF50")
-        else:
-            self.flag_button.config(text="Режим Флага: ВЫКЛ", bg="#FF5733")
-
+    # Метод для размещения мин на поле
     def place_mines(self, first_click_x, first_click_y):
-        # Расположение мин случайным образом (не на первой нажатой ячейке)
         while len(self.mine_positions) < self.mines:
             x, y = random.randint(0, self.width - 1), random.randint(0, self.height - 1)
+            # Мин не должно быть в том месте, где был сделан первый клик
             if (x, y) != (first_click_x, first_click_y) and (x, y) not in self.mine_positions:
-                self.mine_positions.add((x, y))  # Добавляем мину в случайную позицию
+                self.mine_positions.add((x, y))  # Размещение мины
 
+    # Метод для раскрытия ячейки
     def reveal(self, x, y):
-        # Открытие ячейки
         if self.first_click:
-            self.place_mines(x, y)  # Расставляем мины при первом клике
-            self.first_click = False
+            self.place_mines(x, y)  # Размещение мин при первом клике
+            self.first_click = False  # Убираем флаг первого клика
 
         if (x, y) in self.flags or (x, y) in self.revealed:
-            return  # Если ячейка уже помечена флагом или раскрыта, ничего не делать
-
-        if self.flag_mode:
-            self.toggle_flag(x, y)  # В режиме флага пытаемся установить флаг
-            return
+            return  # Ячейка уже раскрыта или помечена флагом
 
         if (x, y) in self.mine_positions:
-            # Игрок наступил на мину
-            self.mines_stepped_on += 1
-            self.buttons[(x, y)]['text'] = '💣'
-            self.buttons[(x, y)]['bg'] = 'orange'
-            self.revealed.add((x, y))  # Добавляем ячейку в раскрытые
-            self.check_all_mines_stepped()  # Проверка, наступил ли игрок на все мины
+            self.mines_stepped_on += 1  # Увеличиваем счетчик наступлений на мину
+            self.buttons[(x, y)]['text'] = '💣'  # Отображаем мину на кнопке
+            self.buttons[(x, y)]['bg'] = 'orange'  # Меняем цвет фона кнопки
+            self.revealed.add((x, y))  # Добавляем в список раскрытых ячеек
+            self.check_all_mines_stepped()  # Проверяем, все ли мины подорваны
             return
 
-        # Ячейка безопасна, открываем её
-        self.expose(x, y)
+        self.expose(x, y)   
+        self.check_win()  # Проверка выигрыша
 
-        # Проверка победы
-        self.check_win()
-
+    
     def expose(self, x, y):
-        # Раскрытие ячейки и её соседей (если вокруг нет мин)
         if (x, y) in self.revealed or not self.in_bounds(x, y):
-            return
+            return  # Если ячейка уже раскрыта или выходит за пределы поля
 
-        self.revealed.add((x, y))
-        adjacent_mines = self.count_adjacent_mines(x, y)
+        self.revealed.add((x, y))  # Добавляем ячейку в раскрытые
+        adjacent_mines = self.count_adjacent_mines(x, y)  # Считаем соседние мины
 
-        # Устанавливаем текст и фон для ячейки
+        # Отображаем количество соседних мин, если их больше 0
         self.buttons[(x, y)]['text'] = str(adjacent_mines) if adjacent_mines > 0 else ''
-        self.buttons[(x, y)]['bg'] = '#D3D3D3'
+        self.buttons[(x, y)]['bg'] = '#D3D3D3'  # Меняем цвет фона
 
+        # Если соседей мин нет, рекурсивно раскрываем соседние ячейки
         if adjacent_mines == 0:
-            # Если вокруг нет мин, раскрываем все соседние ячейки
             for dx in [-1, 0, 1]:
                 for dy in [-1, 0, 1]:
                     if dx != 0 or dy != 0:
                         self.expose(x + dx, y + dy)
 
+    # Метод для установки флага на ячейку
     def toggle_flag(self, x, y):
-        # Установка или снятие флага
         if (x, y) in self.revealed:
-            return  # Нельзя установить флаг на раскрытую ячейку
+            return  # Невозможно поставить флаг на раскрытую ячейку
+
+        if self.flags_placed >= self.mines:
+            messagebox.showwarning("Ограничение", "Вы установили все возможные флаги!")  # Ограничение по флагам
+            return
 
         if (x, y) in self.flags:
-            self.buttons[(x, y)]['text'] = ''
-            self.buttons[(x, y)]['bg'] = "#f0f0f0"
-            self.flags.remove((x, y))  # Убираем флаг и обновляем количество правильно установленных флагов
+            self.buttons[(x, y)]['text'] = ''  
+            self.buttons[(x, y)]['bg'] = "#f0f0f0"  
+            self.flags.remove((x, y))  
+            self.flags_placed -= 1  
             if (x, y) in self.mine_positions:
-                self.correct_flags -= 1
+                self.correct_flags -= 1  # Уменьшаем количество правильных флагов
         else:
-            self.buttons[(x, y)]['text'] = '🚩'
-            self.buttons[(x, y)]['bg'] = "#FFEB3B"
-            self.flags.add((x, y))  # Добавляем флаг
+            self.buttons[(x, y)]['text'] = '🚩'  
+            self.buttons[(x, y)]['bg'] = "#FFEB3B"  
+            self.flags.add((x, y))  
+            self.flags_placed += 1  
             if (x, y) in self.mine_positions:
-                self.correct_flags += 1  # Увеличиваем счетчик правильно установленных флагов
+                self.correct_flags += 1  
 
-        # Проверка победы
-        self.check_win()
+        self.check_win()  # Проверка выигрыша
 
+    # Метод для подсчета соседних мин
     def count_adjacent_mines(self, x, y):
-        # Подсчет количества мин в соседних ячейках
         return sum((nx, ny) in self.mine_positions
                    for nx in range(x - 1, x + 2)
                    for ny in range(y - 1, y + 2)
                    if self.in_bounds(nx, ny))
 
+    # Метод для проверки, находится ли ячейка в пределах поля
     def in_bounds(self, x, y):
-        # Проверка, находится ли ячейка в пределах игрового поля
         return 0 <= x < self.width and 0 <= y < self.height
 
+    # Метод для проверки, выиграл ли игрок
     def check_win(self):
-        # Проверка победы: все безопасные ячейки открыты или все мины помечены флагами
         if len(self.revealed) == self.width * self.height - len(self.mine_positions):
-            self.game_over(True)  # Игрок выиграл
+            self.game_over(True)  # Если все ячейки раскрыты, кроме мин
+        elif self.correct_flags == self.mines and len(self.flags) == self.mines:
+            self.game_over(True)  # Если все флаги установлены правильно
 
+    # Метод для проверки, все ли мины подорваны
     def check_all_mines_stepped(self):
-        # Проверка, наступил ли игрок на все мины
         if self.mines_stepped_on == len(self.mine_positions):
-            self.game_over(False)  # Игрок проиграл
+            self.game_over(False)  # Если наступили на все мины
 
+    # Метод для завершения игры
     def game_over(self, won):
-        # Завершение игры
         for (x, y) in self.mine_positions:
-            self.buttons[(x, y)]['text'] = '💣'
-            self.buttons[(x, y)]['bg'] = 'red'
+            self.buttons[(x, y)]['text'] = '💣'  # Отображаем все мины
+            self.buttons[(x, y)]['bg'] = 'red'  # Меняем цвет фона на красный
 
-        # Отображение сообщения о выигрыше или проигрыше
-        msg = "Вы выиграли! " if won else f"Вы проиграли! Вы наступили на {self.mines_stepped_on} мин."
-        messagebox.showinfo("Конец игры", msg)
+        if won:
+            msg = f"Вы выиграли! Найдено мин: {self.correct_flags}, Наступлено на мин: {self.mines_stepped_on}"
+        else:
+            msg = f"Вы проиграли! Найдено мин: {self.correct_flags}, Наступлено на мин: {self.mines_stepped_on}"
+        
+        messagebox.showinfo("Конец игры", msg)  # Показываем сообщение о завершении игры
 
-        # Блокировка всех кнопок после завершения игры
+        # Блокируем все кнопки после окончания игры
         for button in self.buttons.values():
             button.config(state=tk.DISABLED)
 
+    # Метод для перезапуска игры
     def restart_game(self):
-        # Перезапуск игры
-        self.master.destroy()  # Закрыть текущее окно
-        start_game(self.width, self.height, self.mines)  # Запуск новой игры
+        self.master.destroy()  # Закрываем текущее окно
+        start_game(self.width, self.height, self.mines)  # Запускаем новую игру
 
 
+# Функция для старта игры
 def start_game(width, height, mines):
-    # Запуск игры с заданными параметрами
-    root = tk.Tk()
-    root.title("Сапер")
-    Minesweeper(root, width, height, mines)
-    root.mainloop()
+    root = tk.Tk()  # Создаем новое окно
+    root.title("Сапер") 
+    Minesweeper(root, width, height, mines) 
+    root.mainloop()  
 
 
+# Функция для отображения главного меню
 def main_menu():
-    # Главное меню с выбором уровня сложности
-    menu_root = tk.Tk()
-    menu_root.title("Сапер - Меню")
-    menu_root.geometry('400x400')
-    menu_root.config(bg="#f0f0f0")
+    menu_root = tk.Tk()  # Создаем окно меню
+    menu_root.title("Сапер - Меню") 
+    menu_root.geometry('400x400')  
+    menu_root.config(bg="#f0f0f0")   
 
     tk.Label(menu_root, text="Сапер", bg="#f0f0f0", font=("Arial", 24, "bold")).pack(pady=20)
 
-    def start_with_difficulty(difficulty):
-        # Запуск игры с выбранной сложностью
-        if difficulty == 'Easy':
-            start_game(8, 8, 10)
-        elif difficulty == 'Normal':
-            start_game(16, 16, 40)
-        elif difficulty == 'Hard':
-            start_game(24, 24, 99)
+    # Поля для ввода ширины, высоты и количества мин
+    tk.Label(menu_root, text="Ширина:", bg="#f0f0f0", font=("Arial", 12)).pack(pady=5)
+    width_entry = tk.Entry(menu_root, font=("Arial", 12))
+    width_entry.insert(0, "10")  # Значение по умолчанию
+    width_entry.pack(pady=5)
 
-    # Кнопки для выбора сложности
-    tk.Button(menu_root, text="Легкий", command=lambda: start_with_difficulty('Easy'), bg="#4CAF50", fg="white",
-              font=("Arial", 14), width=15).pack(pady=10)
-    tk.Button(menu_root, text="Средний", command=lambda: start_with_difficulty('Normal'), bg="#FFC107", fg="black",
-              font=("Arial", 14), width=15).pack(pady=10)
-    tk.Button(menu_root, text="Сложный", command=lambda: start_with_difficulty('Hard'), bg="#F44336", fg="white",
-              font=("Arial", 14), width=15).pack(pady=10)
+    tk.Label(menu_root, text="Высота:", bg="#f0f0f0", font=("Arial", 12)).pack(pady=5)
+    height_entry = tk.Entry(menu_root, font=("Arial", 12))
+    height_entry.insert(0, "10")  # Значение по умолчанию
+    height_entry.pack(pady=5)
 
-    menu_root.mainloop()
+    tk.Label(menu_root, text="Количество мин:", bg="#f0f0f0", font=("Arial", 12)).pack(pady=5)
+    mines_entry = tk.Entry(menu_root, font=("Arial", 12))
+    mines_entry.insert(0, "10")  # Значение по умолчанию
+    mines_entry.pack(pady=5)
+
+    # Функция для старта игры с пользовательскими настройками
+    def start_game_with_custom_settings():
+        try:
+            width = int(width_entry.get())  # Получаем ширину
+            height = int(height_entry.get())  # Получаем высоту
+            mines = int(mines_entry.get())  # Получаем количество мин
+
+            # Проверка валидности введенных данных
+            if width <= 0 or height <= 0 or mines <= 0 or mines > width * height:
+                raise ValueError
+
+            start_game(width, height, mines)  # Запускаем игру
+            menu_root.destroy()  # Закрываем меню
+        except ValueError:
+            messagebox.showerror("Ошибка", "Пожалуйста, введите правильные значения для ширины, высоты и количества мин.")
+
+    # Кнопка для старта игры
+    tk.Button(menu_root, text="Начать игру", command=start_game_with_custom_settings, bg="#4CAF50", fg="white",
+              font=("Arial", 14), width=15).pack(pady=20)
+
+    menu_root.mainloop()  # Запуск главного цикла меню
 
 
-main_menu()
+main_menu()  # Запуск главного меню
